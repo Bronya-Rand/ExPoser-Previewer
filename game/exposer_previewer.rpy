@@ -177,13 +177,13 @@ screen new_exposer_previewer:
 
         if not hide_preview_code:
             vbox:
-                if total_characters < 3 or (total_characters >= 3 and selected_character == char1):
+                if total_characters == 1 or (total_characters == 2 and selected_character == char1) or (total_characters >= 3 and (selected_character == char1 or selected_character == char2)):
                     xalign 0.05
                 else:
                     xalign 0.95
                 yalign 0.95
 
-                textbutton "Manual Mode" action ShowMenu("exposer_previewer")
+                textbutton "Manual Mode" action [Hide("exposer_pose_menu"), ShowMenu("exposer_previewer")]
                 if selected_character.definition.char != "placeholder":
                     textbutton "Copy Pose Data" action Function(copy_line, selected_character)
                 textbutton "Reset Char" action [Function(selected_character.reset), Function(apply_to_input, selected_character)]
@@ -197,13 +197,13 @@ screen exposer_pose_menu:
     style_prefix "exposer_previewer"
 
     if not hide_preview_code:
-        if total_characters < 3 or (total_characters >= 3 and selected_character == char1):
+        if total_characters == 1 or (total_characters == 2 and selected_character == char1) or (total_characters >= 3 and (selected_character == char1 or selected_character == char2)):
             add Transform(Solid("#000"), alpha=0.75) xpos 820 xsize 460
         else: 
             add Transform(Solid("#000"), alpha=0.75) xsize 460
 
         fixed:
-            if total_characters < 3 or (total_characters >= 3 and selected_character == char1):
+            if total_characters == 1 or (total_characters == 2 and selected_character == char1) or (total_characters >= 3 and (selected_character == char1 or selected_character == char2)):
                 xpos 820
             vbox:
                 xoffset 25
