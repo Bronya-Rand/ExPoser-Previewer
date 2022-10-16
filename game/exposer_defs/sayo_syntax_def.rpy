@@ -1,0 +1,35 @@
+
+init python:
+    sayori_def = ExposerPreviewerDefinition(
+        char="sayori",
+        supports_exposer=True,
+        poses=['turned'],
+        exposer_poses=['base'],
+        outfits=['uniform', 'casual'],
+        moods=['neut', "angr", "anno", "cry", "curi", "dist", "doub", "flus", "happ", "laug", "lsur", "nerv", "pani", "pout", "sad", "sedu", "shoc", "vang", "vsur", "worr", "yand"],
+        blushes=["", 'nobl', 'awkw', 'blus', 'blaw'], # Keep the first element as ""
+        left_poses=["", 'ldown', 'lup'],
+        right_poses=["", 'rdown', 'rup'],
+        head=[],
+        head_noses=[],
+        head_mouths=[],
+        head_eyes=[],
+        head_eyebrows=[],
+        noses=["", 'n1', 'n2', 'n3', 'n4', 'nl'],
+        mouths=["", 'ma', 'mb', 'mc', 'md', 'me', 'mf', 'mg', 'mh', 'mi', 'mj', 'mk', 'ml', 'mm', 'mn', 'mo', 'mp', 'mq', 'mr'],
+        eyes=["", 'e1a', 'e1b', 'e1c', 'e1d', 'e1e', 'e1f', 'e1g', 'e1h', 'e2a', 'e2b', 'e2c', 'e2d', 'e3a', 'e3b', 'e4a', 'e4b', 'e4c', 'e4d', 'e4e', 'e0a', 'e0b'],
+        eyebrows=["", 'b1a', 'b1b', 'b1c', 'b1d', 'b1e', 'b1f', 'b2a', 'b2b', 'b2c', 'b3a', 'b3b', 'b3c'],
+        specials=['s_scream'],
+        second_poses=['tap'],
+        second_moods=['nerv', 'angr', 'dist', 'neut', 'pout'],
+        second_blushes=['nobl', 'awkw', 'blus', 'blaw', 'bful'],
+        second_noses=["", 'n1', 'n2', 'n3', 'n4', 'n5'],
+        second_mouths=["", 'm1', 'm2', 'm3', 'm4'],
+        second_eyes=["", 'e1', 'e2', 'e3', 'e4', 'e5', 'e6'],
+        second_eyebrows=["", "b1", "b2", "b3"],
+        ddlc = True,
+        ddlc_poses = [1,2,3,4,5],
+        ddlc_expressions = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y'],
+        ddlc_special_pose = [5],
+        ddlc_special_expressions = ['a', 'b', 'c', 'd']
+    )
