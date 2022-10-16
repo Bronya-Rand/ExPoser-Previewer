@@ -1,6 +1,5 @@
 
 define total_characters = 1 
-define use_mpt = False
 default auto_mode = True
 default persistent.exp_first_run = False
 default persistent.exp_advanced_first_run = False
@@ -17,6 +16,7 @@ init python:
             self.definition = placeholder
             self.placeholder = Placeholder("girl", text="Placeholder")
             self.allow_exposer_syntax = True
+            self.ddlc = True
             self.ddlc_pose = 1
             self.ddlc_casual = False
             self.ddlc_expression = "a"
@@ -78,7 +78,7 @@ init python:
         if char.definition.char != "placeholder":
             l = "show " + char.definition.char.strip() + " " + char.pose_input.strip()
             pygame_sdl2.scrap.put(pygame_sdl2.scrap.SCRAP_TEXT, l.encode("utf-8"))
-            if use_mpt and char.allow_exposer_syntax:
+            if not char.ddlc and char.allow_exposer_syntax:
                 renpy.show_screen("dialog", message="Copied syntax of this character to the clipboard.\n{b}NOTE:{/b}The syntax created only works for the {u}ExPoser{/u} pose tool.", ok_action=Hide("dialog"))
             else:
                 renpy.show_screen("dialog", message="Copied syntax of this character to the clipboard.", ok_action=Hide("dialog"))
@@ -113,7 +113,7 @@ init python:
         except IndexError: return lst[all_keys[0]]
     
     def apply_to_input(char):
-        if char.definition.ddlc and not use_mpt:
+        if char.definition.ddlc and char.ddlc:
             if char.ddlc_casual:
                 char.pose_input = str(char.ddlc_pose) + "b" + char.ddlc_expression
             else:
@@ -248,19 +248,19 @@ screen exposer_pose_menu:
                     if selected_character.definition.ddlc:
                         hbox:
                             text "Syntax "
-                            textbutton "<" action [ToggleVariable("use_mpt"), Function(apply_to_input, selected_character)]
+                            textbutton "<" action [ToggleField(selected_character, "ddlc"), Function(apply_to_input, selected_character)]
                             null width 5
                             vbox:
                                 xsize 160
                                 python:
                                     syntax_text = "MPT/ExPoser"
-                                    if not use_mpt:
+                                    if selected_character.ddlc:
                                         syntax_text = "DDLC"
                                 text syntax_text xalign 0.5
                             null width 5
-                            textbutton ">" action [ToggleVariable("use_mpt"), Function(apply_to_input, selected_character)]
+                            textbutton ">" action [ToggleField(selected_character, "ddlc"), Function(apply_to_input, selected_character)]
                     
-                    if not use_mpt:
+                    if selected_character.ddlc:
                         hbox:
                             text "Pose # "
                             textbutton "<" action [SetField(selected_character, "ddlc_pose", poser_menu_arrow_action(selected_character.ddlc_pose, selected_character.definition.ddlc_def.ddlc_poses, True)), Function(apply_to_input, selected_character)]
