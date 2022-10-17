@@ -3,7 +3,7 @@ python early:
     import string
 
 init -1 python:
-    available_characters = {}
+    available_characters = dict()
 
     class ExposerDDLCDefinition():
         def __init__(self, ddlc_poses, ddlc_expressions, ddlc_special_pose, ddlc_special_expressions):

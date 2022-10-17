@@ -37,7 +37,7 @@ init python:
         def parse_input_data(self):
             if self.definition.char != "placeholder":
                 try:
-                    if renpy.can_show(self.definition.char + " " + self.pose_input):
+                    if new_can_show(self.definition.char + " " + self.pose_input):
                         return self.definition.char + " " + self.pose_input, self.zoom_size
                     else:
                         return self.placeholder, 1.0
@@ -137,6 +137,22 @@ init python:
                 for x in [char.mpt_blush, char.mpt_left_pose, char.mpt_right_pose, char.mpt_nose, char.mpt_mouth, char.mpt_eye, char.mpt_eyebrow]:
                     if x:
                         char.pose_input += " " + x
+    
+    # 7.5.X/8.0.X can_show cuz <7.4.11 causes issues
+    def new_can_show(name, layer=None, tag=None):
+
+        if not isinstance(name, tuple):
+            name = tuple(name.split())
+
+        if tag is None:
+            tag = name[0]
+
+        layer = renpy.default_layer(layer, tag)
+
+        try:
+            return renpy.game.context().images.apply_attributes(layer, tag, name)
+        except:
+            return None
 
 screen new_exposer_previewer:
     tag menu
