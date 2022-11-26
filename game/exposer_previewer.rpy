@@ -14,22 +14,35 @@ init python:
             self.zoom_size = 0.76
             self.definition = placeholder
             self.placeholder = Placeholder("girl", text="Placeholder")
+            self.ddlc_syntax = False
+            self.ddlc_casual_outfit_only = False
 
         def parse_input_data(self):
             if self.definition.char != "Placeholder":
-                try:
-                    if new_can_show(self.definition.pose + " " + self.definition.input.pose_input):
-                        return self.definition.pose + " " + self.definition.input.pose_input, self.zoom_size
+                if not self.ddlc_syntax:
+                    try:
+                        if new_can_show(self.definition.pose + " " + self.definition.input.pose_input):
+                            return self.definition.pose + " " + self.definition.input.pose_input, self.zoom_size
+                        else:
+                            return self.placeholder, 1.0
+                    except IndexError:
+                        return self.placeholder, 1.0
+                else:
+                    if new_can_show(self.definition.char + " " + self.definition.input.pose_input):
+                        return self.definition.char + " " + self.definition.input.pose_input, self.zoom_size
                     else:
                         return self.placeholder, 1.0
-                except IndexError:
-                    return self.placeholder, 1.0
             else:
                 return self.placeholder, 1.0
         
         def reset(self):
             self.zoom_size = 0.76
-            self.definition = placeholder
+            self.definition.input.reset()
+            if not self.ddlc_syntax:
+                self.definition = placeholder
+            else:
+                self.definition = placeholder_ddlc
+            self.ddlc_casual_outfit_only = False
 
     char1 = ExPoserCharacter()
     char2 = ExPoserCharacter()
@@ -74,15 +87,18 @@ init python:
         except IndexError: return lst[all_keys[0]]
     
     def apply_to_input(char):
-        temp = ""
+        if not char.ddlc_syntax:
+            temp = ""
+            
+            for key, value in char.definition.input.__dict__.items():
+                if key in ["pose_input", "mpt"]: continue
 
-        for key, value in char.definition.input.__dict__.items():
-            if key == "pose_input": continue
-
-            if value != "":
-                temp += value + " "
-        
-        char.definition.input.pose_input = temp
+                if value != "":
+                    temp += value + " "
+            
+            char.definition.input.pose_input = temp
+        else:
+            char.definition.input.pose_input = char.definition.input.outfit
     
     # 7.5.X/8.0.X can_show cuz <7.4.11 causes issues
     def new_can_show(name, layer=None, tag=None):
@@ -172,18 +188,45 @@ screen exposer_pose_menu:
                 spacing 5
                 null height 10
 
+                if not selected_character.ddlc_syntax:
+                    hbox:
+                        xoffset -10
+                        xalign 0.5
+                        text "Character "
+                        textbutton "<" action [SetField(selected_character, "definition", poser_menu_dict_action(selected_character.definition, selected_character.definition.char, available_characters, True)), Function(apply_to_input, selected_character)]
+                        null width 5
+                        vbox:
+                            xsize 260
+                            text selected_character.definition.char xalign 0.5
+                        null width 5
+                        textbutton ">" action [SetField(selected_character, "definition", poser_menu_dict_action(selected_character.definition, selected_character.definition.char, available_characters)), Function(apply_to_input, selected_character)]
+                else:
+                    hbox:
+                        xoffset -10
+                        xalign 0.5
+                        text "Character "
+                        textbutton "<" action [SetField(selected_character, "definition", poser_menu_dict_action(selected_character.definition, selected_character.definition.char, available_ddlc_characters, True)), SetField(selected_character, "ddlc_casual_outfit_only", False), Function(apply_to_input, selected_character)]
+                        null width 5
+                        vbox:
+                            xsize 260
+                            text selected_character.definition.char.capitalize() xalign 0.5
+                        null width 5
+                        textbutton ">" action [SetField(selected_character, "definition", poser_menu_dict_action(selected_character.definition, selected_character.definition.char, available_ddlc_characters)), SetField(selected_character, "ddlc_casual_outfit_only", False), Function(apply_to_input, selected_character)]
+
                 hbox:
-                    xoffset -10
-                    xalign 0.5
-                    text "Character "
-                    textbutton "<" action [SetField(selected_character, "definition", poser_menu_dict_action(selected_character.definition, selected_character.definition.char, available_characters, True)), Function(apply_to_input, selected_character)]
+                    text "Syntax "
+                    textbutton "<" action [ToggleField(selected_character, "ddlc_syntax"), Function(selected_character.reset), Function(apply_to_input, selected_character)]
                     null width 5
                     vbox:
-                        xsize 260
-                        text selected_character.definition.char xalign 0.5
+                        xsize 160
+                        python:
+                            syntax_text = "MPT/ExPoser"
+                            if selected_character.ddlc_syntax:
+                                syntax_text = "DDLC"
+                        text syntax_text xalign 0.5
                     null width 5
-                    textbutton ">" action [SetField(selected_character, "definition", poser_menu_dict_action(selected_character.definition, selected_character.definition.char, available_characters)), Function(apply_to_input, selected_character)]
-                
+                    textbutton ">" action [ToggleField(selected_character, "ddlc_syntax"), Function(selected_character.reset), Function(apply_to_input, selected_character)]
+
                 hbox:
                     xoffset -10
                     spacing 2
@@ -213,27 +256,57 @@ screen exposer_pose_menu:
                         scrollbars "vertical"
                         mousewheel True
                         has vbox
-                        
-                        python:
-                            def_list = selected_character.definition.__dict__.copy()
-                            del def_list['pose']
-                            del def_list['char']
-                            del def_list['input']
 
-                        for option, items in def_list.items():
-                            null height 5
+                        if selected_character.ddlc_syntax:
+                            if selected_character.definition.casual != []:
+                                hbox:
+                                    text "Casual Outfit? "
+                                    textbutton "<":
+                                        action [ToggleField(selected_character, "ddlc_casual_outfit_only"), Function(apply_to_input, selected_character)]
+                                    null width 5
+                                    vbox:
+                                        xsize 160
+                                        python:
+                                            casual_text = "No"
+                                            if selected_character.ddlc_casual_outfit_only:
+                                                casual_text = "Yes"
+                                        text casual_text xalign 0.5
+                                    null width 5
+                                    textbutton ">": 
+                                        action [ToggleField(selected_character, "ddlc_casual_outfit_only"), Function(apply_to_input, selected_character)]
 
                             hbox:
-                                text option.capitalize() + " "
+                                text "Pose "
                                 textbutton "<":
-                                    action [SetField(selected_character.definition.input, option, poser_menu_arrow_action(getattr(selected_character.definition.input, option), items, True)), Function(apply_to_input, selected_character)]
+                                    action [SetField(selected_character.definition.input, "outfit", poser_menu_arrow_action(selected_character.definition.input.outfit, (selected_character.definition.casual if selected_character.ddlc_casual_outfit_only else selected_character.definition.uniform), True)), Function(apply_to_input, selected_character)]
                                 null width 5
                                 vbox:
                                     xsize 20
-                                    text getattr(selected_character.definition.input, option) or "None" xalign 0.5
+                                    text selected_character.definition.input.outfit or "None" xalign 0.5
                                 null width 5
                                 textbutton ">": 
-                                    action [SetField(selected_character.definition.input, option, poser_menu_arrow_action(getattr(selected_character.definition.input, option), items)), Function(apply_to_input, selected_character)]
+                                    action [SetField(selected_character.definition.input, "outfit", poser_menu_arrow_action(selected_character.definition.input.outfit, (selected_character.definition.casual if selected_character.ddlc_casual_outfit_only else selected_character.definition.uniform))), Function(apply_to_input, selected_character)]
+                        else:
+                            python:
+                                def_list = selected_character.definition.__dict__.copy()
+                                del def_list['pose']
+                                del def_list['char']
+                                del def_list['input']
+
+                            for option, items in def_list.items():
+                                null height 5
+
+                                hbox:
+                                    text option.capitalize() + " "
+                                    textbutton "<":
+                                        action [SetField(selected_character.definition.input, option, poser_menu_arrow_action(getattr(selected_character.definition.input, option), items, True)), Function(apply_to_input, selected_character)]
+                                    null width 5
+                                    vbox:
+                                        xsize 20
+                                        text getattr(selected_character.definition.input, option) or "None" xalign 0.5
+                                    null width 5
+                                    textbutton ">": 
+                                        action [SetField(selected_character.definition.input, option, poser_menu_arrow_action(getattr(selected_character.definition.input, option), items)), Function(apply_to_input, selected_character)]
 
 style exposer_previewer_button_text is navigation_button_text
 style exposer_previewer_button:
@@ -284,19 +357,29 @@ screen exposer_previewer:
             vbox:
                 xalign 0.05
                 yalign 0.95
+                textbutton "Switch Syntax" action [ToggleField(selected_character, "ddlc_syntax"), Function(selected_character.reset), Function(apply_to_input, selected_character)]
                 textbutton "Auto Mode" action ShowMenu('new_exposer_previewer')
                 textbutton "Exit" action Return()
             
-            if total_characters != 1:
+            vbox:
+                xalign 0.5
+                yalign 0.98
                 hbox:
-                    xalign 0.5
-                    yalign 0.99
-                    textbutton "1" action [SetVariable("selected_character", char1), SensitiveIf(selected_character != char1)]
-                    textbutton "2" action [SetVariable("selected_character", char2), SensitiveIf(selected_character != char2)]
-                    if total_characters >= 3:
-                        textbutton "3" action [SetVariable("selected_character", char3), SensitiveIf(selected_character != char3)]
-                    if total_characters == 4:
-                        textbutton "4" action [SetVariable("selected_character", char4), SensitiveIf(selected_character != char4)]
+                    python:
+                        syntax_text = "MPT/ExPoser"
+                        if selected_character.ddlc_syntax:
+                            syntax_text = "DDLC"
+                    text "Syntax: " + syntax_text xalign 0.5
+
+                if total_characters != 1:
+                    hbox:
+                        xalign 0.5
+                        textbutton "1" action [SetVariable("selected_character", char1), SensitiveIf(selected_character != char1)]
+                        textbutton "2" action [SetVariable("selected_character", char2), SensitiveIf(selected_character != char2)]
+                        if total_characters >= 3:
+                            textbutton "3" action [SetVariable("selected_character", char3), SensitiveIf(selected_character != char3)]
+                        if total_characters == 4:
+                            textbutton "4" action [SetVariable("selected_character", char4), SensitiveIf(selected_character != char4)]
             
             vbox:
                 xalign 0.95
@@ -312,7 +395,10 @@ screen exposer_previewer:
                     bar value FieldValue(selected_character, "zoom_size", 1.0) xmaximum 90
                     textbutton "R" action SetField(selected_character, "zoom_size", 0.76)
                 hbox:
-                    text "Character: " + selected_character.definition.char
+                    if not selected_character.ddlc_syntax:
+                        text "Character: " + selected_character.definition.char
+                    else:
+                        text "Character: " + selected_character.definition.char.capitalize()
                     textbutton "Select" action Show("exposer_previewer_list", char=selected_character)
                 hbox:
                     textbutton "Copy" action Function(copy_line, selected_character)
@@ -363,6 +449,10 @@ screen exposer_previewer_list(char):
                 mousewheel True
                 draggable True
                 has vbox
-
-                for x in available_characters:
-                    textbutton x action [Hide("exposer_previewer_list"), SetField(selected_character, "definition", available_characters[x]), Function(apply_to_input, selected_character)]
+                
+                if not char.ddlc_syntax:
+                    for x in available_characters:
+                        textbutton x action [Hide("exposer_previewer_list"), SetField(selected_character, "definition", available_characters[x]), Function(apply_to_input, selected_character)]
+                else:
+                    for x in available_ddlc_characters:
+                        textbutton x.capitalize() action [Hide("exposer_previewer_list"), SetField(selected_character, "definition", available_ddlc_characters[x]), Function(apply_to_input, selected_character)]
