@@ -1,6 +1,7 @@
 
 init -1 python:
     available_characters = dict()
+    available_ddlc_characters = dict()
 
     class ExposerPreviewerInput(object):
         def __init__(self, **kwargs):
@@ -23,7 +24,24 @@ init -1 python:
 
             available_characters[self.char] = self
 
+    class ExposerPreviewerDDLCDefinition(object):
+        def __init__(self, char, uniform, casual):
+            global available_characters
+
+            self.char = char
+            self.uniform = uniform
+            self.casual = casual
+            self.input = ExposerPreviewerInput(outfit="")
+
+            available_ddlc_characters[self.char] = self
+
     placeholder = ExposerPreviewerDefinition(
         char="Placeholder",
         pose=None
+    )
+
+    placeholder_ddlc = ExposerPreviewerDDLCDefinition(
+        char="Placeholder",
+        uniform=[],
+        casual=[]
     )
