@@ -11,7 +11,7 @@ init python in exp_pasrer:
             self.tag = tag
             self.attributes_map = []
 
-    class AttributeDict(object):
+    class AttributeDict():
         def __init__(self):
             self.attributes = {}
         
@@ -19,7 +19,8 @@ init python in exp_pasrer:
             if not self.attributes.has_key(key):
                 self.attributes[key] = value
             else:
-                self.attributes[key] = [*set(self.attributes[key] + value)]
+                # Ren'Py 7 hates [set()] so tell it to convert the set to list again
+                self.attributes[key] = list(set(self.attributes[key] + value))
 
     characters = {}
     ddlc_characters = {}

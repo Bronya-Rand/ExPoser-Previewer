@@ -1,7 +1,7 @@
 
 init -1 python:
-    available_characters = dict()
-    available_ddlc_characters = dict()
+    available_characters = {}
+    available_ddlc_characters = {}
 
     class ExposerPreviewerInput(object):
         def __init__(self, mpt=True, **kwargs):
