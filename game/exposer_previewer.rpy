@@ -81,8 +81,6 @@ init python:
 
             if value != "":
                 temp += value + " "
-
-            print("Temp: %s" % (temp))
         
         char.definition.input.pose_input = temp
     
