@@ -37,6 +37,7 @@ init python:
         
         def reset(self):
             self.zoom_size = 0.76
+            self.definition.input.reset()
             if not self.ddlc_syntax:
                 self.definition = placeholder
             else:
@@ -90,7 +91,7 @@ init python:
             temp = ""
             
             for key, value in char.definition.input.__dict__.items():
-                if key == "pose_input": continue
+                if key in ["pose_input", "mpt"]: continue
 
                 if value != "":
                     temp += value + " "

@@ -4,11 +4,32 @@ init -1 python:
     available_ddlc_characters = dict()
 
     class ExposerPreviewerInput(object):
-        def __init__(self, **kwargs):
+        def __init__(self, mpt=True, **kwargs):
             self.pose_input = ""
+            self.mpt = mpt
 
             for key, value in kwargs.items():
-                setattr(self, key, "")
+                self.set_key(key, "")
+
+        def set_key(self, key, value):
+            if self.mpt:
+                if key == "outfit":
+                    setattr(self, key, "uniform")
+                elif key == "mood":
+                    setattr(self, key, "neut")
+                else:
+                    setattr(self, key, value)
+            else:
+                if key == "outfit":
+                    setattr(self, key, "1a")
+                else:
+                    setattr(self, key, value)
+
+        def reset(self):
+            for key, value in self.__dict__.items():
+                if key == "mpt": continue
+
+                self.set_key(key, "")
 
     class ExposerPreviewerDefinition(object):
         def __init__(self, char, pose, **kwargs):
@@ -31,7 +52,7 @@ init -1 python:
             self.char = char
             self.uniform = uniform
             self.casual = casual
-            self.input = ExposerPreviewerInput(outfit="")
+            self.input = ExposerPreviewerInput(mpt=False, outfit="1a")
 
             available_ddlc_characters[self.char] = self
 
