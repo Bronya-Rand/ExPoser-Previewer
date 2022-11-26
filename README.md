@@ -11,7 +11,7 @@ With support for all DDLC poses and expressions, including Mood Pose Tool (MPT)/
 - Manual Mode: A menu where you can type any DDLC, MPT/ExPoser pose and expression for viewing.
 - Auto Mode: A menu where you can adjust poses and expressions via a list of pose/expression items.
 - Custom Definitions: Generate a custom definition file automatically for another character in your mod and be able to pose/express them in ExPoser Previewer for you or everyone else by sharing the definition files.
-   > Generation of new character definition files or edits to a existing character (addition/removal), requires *config.developer* to be enabled in `definitions/definitions.rpy` (`definitions.rpy` for old template layouts [MAS (0.1.0 - 1.1.1) | Mod Template 2.0 (2.1.0 - 4.0.2)]) and a game restart to compile the generated RPY file.
+   > Generation of new character definition files or edits to a existing character (addition/removal), requires *config.developer* to be enabled in `definitions/definitions.rpy` (`definitions.rpy` for old template layouts [MAS (0.1.0 - 1.1.2) | Mod Template 2.0 (2.1.0 - 4.0.2)]) and a game restart to compile the generated RPY file.
 
 ## Installation
 > Make sure you have MPT **or** MPT + ExPoser installed in your mod before doing this.
@@ -19,7 +19,7 @@ With support for all DDLC poses and expressions, including Mood Pose Tool (MPT)/
 2. Drop the contents from the ZIP file to your mod.
 3. Open `screens.rpy` and add this line somewhere in the navigation screen
    ```py
-   textbutton _("ExP Previewer") action If(auto_mode, ShowMenu("new_exposer_previewer"), ShowMenu("exposer_previewer"))
+   textbutton _("ExP Previewer") action ShowMenu("new_exposer_previewer")
    ```
 4. Launch DDLC.
 5. Click *ExP Previewer* and get to posing.
