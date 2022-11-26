@@ -9,63 +9,40 @@ init python:
     import pygame_sdl2.scrap
     import re
 
-    class ExPoserCharacter:
+    class ExPoserCharacter():
         def __init__(self):
-            self.pose_input = ""
             self.zoom_size = 0.76
             self.definition = placeholder
             self.placeholder = Placeholder("girl", text="Placeholder")
-            self.allow_exposer_syntax = True
-            self.ddlc = True
-            self.ddlc_pose = 1
-            self.ddlc_casual = False
-            self.ddlc_expression = "a"
-            self.mpt_pose = "base" if self.allow_exposer_syntax else "forward"
-            self.mpt_outfit = "uniform"
-            self.mpt_mood = "neut"
-            self.mpt_head = ""
-            self.mpt_blush = ""
-            self.mpt_left_pose = ""
-            self.mpt_right_pose = ""
-            self.mpt_nose = ""
-            self.mpt_mouth = ""
-            self.mpt_eye = ""
-            self.mpt_eyebrow = ""
-            self.mpt_allow_special_scream = False
-            self.mpt_special = "s_scream"
+            self.ddlc_syntax = False
+            self.ddlc_casual_outfit_only = False
 
         def parse_input_data(self):
-            if self.definition.char != "placeholder":
-                try:
-                    if new_can_show(self.definition.char + " " + self.pose_input):
-                        return self.definition.char + " " + self.pose_input, self.zoom_size
+            if self.definition.char != "Placeholder":
+                if not self.ddlc_syntax:
+                    try:
+                        if new_can_show(self.definition.pose + " " + self.definition.input.pose_input):
+                            return self.definition.pose + " " + self.definition.input.pose_input, self.zoom_size
+                        else:
+                            return self.placeholder, 1.0
+                    except IndexError:
+                        return self.placeholder, 1.0
+                else:
+                    if new_can_show(self.definition.char + " " + self.definition.input.pose_input):
+                        return self.definition.char + " " + self.definition.input.pose_input, self.zoom_size
                     else:
                         return self.placeholder, 1.0
-                except IndexError:
-                    return self.placeholder, 1.0
             else:
                 return self.placeholder, 1.0
         
         def reset(self):
-            self.pose_input = ""
             self.zoom_size = 0.76
-            self.definition = placeholder
-            self.allow_exposer_syntax = False
-            self.ddlc_pose = 1
-            self.ddlc_casual = False
-            self.ddlc_expression = "a"
-            self.mpt_pose = "base" if self.allow_exposer_syntax else "forward"
-            self.mpt_outfit = "uniform"
-            self.mpt_mood = "neut"
-            self.mpt_head = ""
-            self.mpt_blush = ""
-            self.mpt_left_pose = ""
-            self.mpt_right_pose = ""
-            self.mpt_nose = ""
-            self.mpt_mouth = ""
-            self.mpt_eye = ""
-            self.mpt_eyebrow = ""
-            self.mpt_allow_special_scream = False
+            self.definition.input.reset()
+            if not self.ddlc_syntax:
+                self.definition = placeholder
+            else:
+                self.definition = placeholder_ddlc
+            self.ddlc_casual_outfit_only = False
 
     char1 = ExPoserCharacter()
     char2 = ExPoserCharacter()
@@ -75,15 +52,12 @@ init python:
     selected_character = char1
 
     def copy_line(char):
-        if char.definition.char != "placeholder":
-            l = "show " + char.definition.char.strip() + " " + char.pose_input.strip()
+        if char.definition.char != "Placeholder":
+            l = "show " + char.definition.pose.strip() + " " + char.definition.input.pose_input.strip()
             pygame_sdl2.scrap.put(pygame_sdl2.scrap.SCRAP_TEXT, l.encode("utf-8"))
-            if not char.ddlc and char.allow_exposer_syntax:
-                renpy.show_screen("dialog", message="Copied syntax of this character to the clipboard.\n{b}NOTE:{/b}The syntax created only works for the {u}ExPoser{/u} pose tool.", ok_action=Hide("dialog"))
-            else:
-                renpy.show_screen("dialog", message="Copied syntax of this character to the clipboard.", ok_action=Hide("dialog"))
+            renpy.show_screen("dialog", message="Copied syntax of this character to the clipboard.", ok_action=Hide("dialog"))
         else:
-            renpy.show_screen("dialog", message="Cannot copy syntax of a Placeholder character.", ok_action=Hide("dialog"))
+            renpy.show_screen("dialog", message="Cannot copy syntax of a placeholder character.", ok_action=Hide("dialog"))
 
     def poser_menu_arrow_action(obj, lst, back=False):
         index = 0
@@ -113,30 +87,18 @@ init python:
         except IndexError: return lst[all_keys[0]]
     
     def apply_to_input(char):
-        if char.definition.ddlc and char.ddlc:
-            if char.ddlc_casual:
-                char.pose_input = str(char.ddlc_pose) + "b" + char.ddlc_expression
-            else:
-                char.pose_input = str(char.ddlc_pose) + char.ddlc_expression
-        else:
-            if char.mpt_pose == "base" and not char.allow_exposer_syntax:
-                char.mpt_pose = "turned"
-            elif char.definition.supports_exposer and (char.mpt_pose == "forward" or char.mpt_pose == "turned") and char.allow_exposer_syntax:
-                char.mpt_pose = "base"
+        if not char.ddlc_syntax:
+            temp = ""
+            
+            for key, value in char.definition.input.__dict__.items():
+                if key in ["pose_input", "mpt"]: continue
 
-            char.pose_input = char.mpt_pose + " " + char.mpt_outfit + " " + char.mpt_mood
-            if char.mpt_allow_special_scream:
-                for x in [char.mpt_blush, char.mpt_left_pose, char.mpt_right_pose, char.mpt_nose, char.mpt_mouth, char.mpt_eye, char.mpt_eyebrow, char.mpt_special]:
-                    if x:
-                        char.pose_input += " " + x
-            elif char.mpt_head:
-                for x in [char.mpt_blush, char.mpt_left_pose, char.mpt_right_pose, char.mpt_head, char.mpt_nose, char.mpt_mouth, char.mpt_eye, char.mpt_eyebrow]:
-                    if x:
-                        char.pose_input += " " + x
-            else:
-                for x in [char.mpt_blush, char.mpt_left_pose, char.mpt_right_pose, char.mpt_nose, char.mpt_mouth, char.mpt_eye, char.mpt_eyebrow]:
-                    if x:
-                        char.pose_input += " " + x
+                if value != "":
+                    temp += value + " "
+            
+            char.definition.input.pose_input = temp
+        else:
+            char.definition.input.pose_input = char.definition.input.outfit
     
     # 7.5.X/8.0.X can_show cuz <7.4.11 causes issues
     def new_can_show(name, layer=None, tag=None):
@@ -226,18 +188,45 @@ screen exposer_pose_menu:
                 spacing 5
                 null height 10
 
+                if not selected_character.ddlc_syntax:
+                    hbox:
+                        xoffset -10
+                        xalign 0.5
+                        text "Character "
+                        textbutton "<" action [SetField(selected_character, "definition", poser_menu_dict_action(selected_character.definition, selected_character.definition.char, available_characters, True)), Function(apply_to_input, selected_character)]
+                        null width 5
+                        vbox:
+                            xsize 260
+                            text selected_character.definition.char xalign 0.5
+                        null width 5
+                        textbutton ">" action [SetField(selected_character, "definition", poser_menu_dict_action(selected_character.definition, selected_character.definition.char, available_characters)), Function(apply_to_input, selected_character)]
+                else:
+                    hbox:
+                        xoffset -10
+                        xalign 0.5
+                        text "Character "
+                        textbutton "<" action [SetField(selected_character, "definition", poser_menu_dict_action(selected_character.definition, selected_character.definition.char, available_ddlc_characters, True)), SetField(selected_character, "ddlc_casual_outfit_only", False), Function(apply_to_input, selected_character)]
+                        null width 5
+                        vbox:
+                            xsize 260
+                            text selected_character.definition.char.capitalize() xalign 0.5
+                        null width 5
+                        textbutton ">" action [SetField(selected_character, "definition", poser_menu_dict_action(selected_character.definition, selected_character.definition.char, available_ddlc_characters)), SetField(selected_character, "ddlc_casual_outfit_only", False), Function(apply_to_input, selected_character)]
+
                 hbox:
-                    xoffset -10
-                    xalign 0.5
-                    text "Character "
-                    textbutton "<" action [SetField(selected_character, "definition", poser_menu_dict_action(selected_character.definition, selected_character.definition.char, available_characters, True)), Function(apply_to_input, selected_character)]
+                    text "Syntax "
+                    textbutton "<" action [ToggleField(selected_character, "ddlc_syntax"), Function(selected_character.reset), Function(apply_to_input, selected_character)]
                     null width 5
                     vbox:
-                        xsize 260
-                        text selected_character.definition.char.capitalize() xalign 0.5
+                        xsize 160
+                        python:
+                            syntax_text = "MPT/ExPoser"
+                            if selected_character.ddlc_syntax:
+                                syntax_text = "DDLC"
+                        text syntax_text xalign 0.5
                     null width 5
-                    textbutton ">" action [SetField(selected_character, "definition", poser_menu_dict_action(selected_character.definition, selected_character.definition.char, available_characters)), Function(apply_to_input, selected_character)]
-                
+                    textbutton ">" action [ToggleField(selected_character, "ddlc_syntax"), Function(selected_character.reset), Function(apply_to_input, selected_character)]
+
                 hbox:
                     xoffset -10
                     spacing 2
@@ -260,237 +249,64 @@ screen exposer_pose_menu:
                         if total_characters == 4:
                             textbutton "4" action [SetVariable("selected_character", char4), SensitiveIf(selected_character != char4)]
 
-                if selected_character.definition.char != "placeholder":
-                    if selected_character.definition.ddlc:
-                        hbox:
-                            text "Syntax "
-                            textbutton "<" action [ToggleField(selected_character, "ddlc"), Function(apply_to_input, selected_character)]
-                            null width 5
-                            vbox:
-                                xsize 160
-                                python:
-                                    syntax_text = "MPT/ExPoser"
-                                    if selected_character.ddlc:
-                                        syntax_text = "DDLC"
-                                text syntax_text xalign 0.5
-                            null width 5
-                            textbutton ">" action [ToggleField(selected_character, "ddlc"), Function(apply_to_input, selected_character)]
-                    
-                    if selected_character.ddlc:
-                        hbox:
-                            text "Pose # "
-                            textbutton "<" action [SetField(selected_character, "ddlc_pose", poser_menu_arrow_action(selected_character.ddlc_pose, selected_character.definition.ddlc_def.ddlc_poses, True)), Function(apply_to_input, selected_character)]
-                            null width 5
-                            vbox:
-                                xsize 20
-                                text str(selected_character.ddlc_pose) xalign 0.5
-                            null width 5
-                            textbutton ">" action [SetField(selected_character, "ddlc_pose", poser_menu_arrow_action(selected_character.ddlc_pose, selected_character.definition.ddlc_def.ddlc_poses)), Function(apply_to_input, selected_character)]
+                if selected_character.definition.char != "Placeholder":
+                    viewport:
+                        xmaximum 420
+                        ymaximum 600
+                        scrollbars "vertical"
+                        mousewheel True
+                        has vbox
 
-                        hbox:
-                            text "Casual Outfit? "
-                            vbox:
-                                xsize 50
-                                python:
-                                    casual_text = "Yes"
-                                    if not selected_character.ddlc_casual:
-                                        casual_text = "No"
-
-                                text casual_text xalign 0.5
-                            null width 5
-                            textbutton ">" action [ToggleField(selected_character, "ddlc_casual"), Function(apply_to_input, selected_character)]
-
-                        hbox:
-                            text "Expression "
-                            textbutton "<" action [SetField(selected_character, "ddlc_expression", poser_menu_arrow_action(selected_character.ddlc_expression, selected_character.definition.ddlc_def.ddlc_special_expressions if selected_character.ddlc_pose in selected_character.definition.ddlc_def.ddlc_special_pose else selected_character.definition.ddlc_def.ddlc_expressions, True)), Function(apply_to_input, selected_character)]
-                            null width 5
-                            vbox:
-                                xsize 20
-                                text selected_character.ddlc_expression xalign 0.5
-                            null width 5
-                            textbutton ">" action [SetField(selected_character, "ddlc_expression", poser_menu_arrow_action(selected_character.ddlc_expression, selected_character.definition.ddlc_def.ddlc_special_expressions if selected_character.ddlc_pose in selected_character.definition.ddlc_def.ddlc_special_pose else selected_character.definition.ddlc_def.ddlc_expressions)), Function(apply_to_input, selected_character)]
-                    else:
-                        if selected_character.definition.supports_exposer:
-                            hbox:
-                                text "Allow ExPoser Syntax? "
-                                vbox:
-                                    xsize 50
-                                    python:
-                                        exposer_text = "Yes"
-                                        if not selected_character.allow_exposer_syntax:
-                                            exposer_text = "No"
-
-                                    text exposer_text xalign 0.5
-                                null width 5
-                                textbutton ">" action [ToggleField(selected_character, "allow_exposer_syntax"), Function(apply_to_input, selected_character)]
-
-                        hbox:
-                            text "Pose "
-                            textbutton "<" action [SetField(selected_character, "mpt_pose", poser_menu_arrow_action(selected_character.mpt_pose, (selected_character.definition.exposer_poses if selected_character.allow_exposer_syntax else selected_character.definition.poses) + selected_character.definition.second_poses, True)), Function(apply_to_input, selected_character)]
-                            null width 5
-                            vbox:
-                                xsize 20
-                                text selected_character.mpt_pose xalign 0.5
-                            null width 5
-                            textbutton ">" action [SetField(selected_character, "mpt_pose", poser_menu_arrow_action(selected_character.mpt_pose, (selected_character.definition.exposer_poses if selected_character.allow_exposer_syntax else selected_character.definition.poses) + selected_character.definition.second_poses)), Function(apply_to_input, selected_character)]
-
-                        hbox:
-                            text "Outfit "
-                            textbutton "<" action [SetField(selected_character, "mpt_outfit", poser_menu_arrow_action(selected_character.mpt_outfit, selected_character.definition.outfits, True)), Function(apply_to_input, selected_character)]
-                            null width 5
-                            vbox:
-                                xsize 20
-                                text selected_character.mpt_outfit xalign 0.5
-                            null width 5
-                            textbutton ">" action [SetField(selected_character, "mpt_outfit", poser_menu_arrow_action(selected_character.mpt_outfit, selected_character.definition.outfits)), Function(apply_to_input, selected_character)]
-
-                        hbox:
-                            text "Mood "
-                            textbutton "<" action [SetField(selected_character, "mpt_mood", poser_menu_arrow_action(selected_character.mpt_mood, selected_character.definition.second_moods if selected_character.mpt_pose in selected_character.definition.second_poses else selected_character.definition.moods, True)), Function(apply_to_input, selected_character)]
-                            null width 5
-                            vbox:
-                                xsize 20
-                                text selected_character.mpt_mood xalign 0.5
-                            null width 5
-                            textbutton ">" action [SetField(selected_character, "mpt_mood", poser_menu_arrow_action(selected_character.mpt_mood, selected_character.definition.second_moods if selected_character.mpt_pose in selected_character.definition.second_poses else selected_character.definition.moods)), Function(apply_to_input, selected_character)]
-
-                        if selected_character.definition.head:
-                            hbox:
-                                text "Head "
-                                textbutton "<" action [SetField(selected_character, "mpt_head", poser_menu_arrow_action(selected_character.mpt_head, selected_character.definition.head, True)), Function(apply_to_input, selected_character)]
-                                null width 5
-                                vbox:
-                                    xsize 20
-                                    text selected_character.mpt_head or "Default" xalign 0.5
-                                null width 5
-                                textbutton ">" action [SetField(selected_character, "mpt_head", poser_menu_arrow_action(selected_character.mpt_head, selected_character.definition.head)), Function(apply_to_input, selected_character)]
-
-                        hbox:
-                            text "Blushes "
-                            textbutton "<" action [SetField(selected_character, "mpt_blush", poser_menu_arrow_action(selected_character.mpt_blush, selected_character.definition.second_blushes if selected_character.mpt_pose in selected_character.definition.second_poses else selected_character.definition.blushes, True)), Function(apply_to_input, selected_character)]
-                            null width 5
-                            vbox:
-                                xsize 20
-                                text selected_character.mpt_blush or "Default" xalign 0.5
-                            null width 5
-                            textbutton ">" action [SetField(selected_character, "mpt_blush", poser_menu_arrow_action(selected_character.mpt_blush, selected_character.definition.second_blushes if selected_character.mpt_pose in selected_character.definition.second_poses else selected_character.definition.blushes)), Function(apply_to_input, selected_character)]
-
-                        if selected_character.mpt_pose not in selected_character.definition.second_poses:
-                            hbox:
-                                text "Left Pose "
-                                textbutton "<" action [SetField(selected_character, "mpt_left_pose", poser_menu_arrow_action(selected_character.mpt_left_pose, selected_character.definition.left_poses, True)), Function(apply_to_input, selected_character)]
-                                null width 5
-                                vbox:
-                                    xsize 20
-                                    text selected_character.mpt_left_pose or "Default" xalign 0.5
-                                null width 5
-                                textbutton ">" action [SetField(selected_character, "mpt_left_pose", poser_menu_arrow_action(selected_character.mpt_left_pose, selected_character.definition.left_poses)), Function(apply_to_input, selected_character)]
-
-                            hbox:
-                                text "Right Pose "
-                                textbutton "<" action [SetField(selected_character, "mpt_right_pose", poser_menu_arrow_action(selected_character.mpt_right_pose, selected_character.definition.right_poses, True)), Function(apply_to_input, selected_character)]
-                                null width 5
-                                vbox:
-                                    xsize 20
-                                    text selected_character.mpt_right_pose or "Default" xalign 0.5
-                                null width 5
-                                textbutton ">" action [SetField(selected_character, "mpt_right_pose", poser_menu_arrow_action(selected_character.mpt_right_pose, selected_character.definition.right_poses)), Function(apply_to_input, selected_character)]
-                        
-                        if selected_character.definition.head and selected_character.mpt_head:
-                            hbox:
-                                text "Noses "
-                                textbutton "<" action [SetField(selected_character, "mpt_nose", poser_menu_arrow_action(selected_character.mpt_nose, selected_character.definition.head_noses, True)), Function(apply_to_input, selected_character)]
-                                null width 5
-                                vbox:
-                                    xsize 20
-                                    text selected_character.mpt_nose or "Default" xalign 0.5
-                                null width 5
-                                textbutton ">" action [SetField(selected_character, "mpt_nose", poser_menu_arrow_action(selected_character.mpt_nose, selected_character.definition.head_noses)), Function(apply_to_input, selected_character)]
-
-                            hbox:
-                                text "Mouths "
-                                textbutton "<" action [SetField(selected_character, "mpt_mouth", poser_menu_arrow_action(selected_character.mpt_mouth, selected_character.definition.head_mouths, True)), Function(apply_to_input, selected_character)]
-                                null width 5
-                                vbox:
-                                    xsize 20
-                                    text selected_character.mpt_mouth or "Default" xalign 0.5
-                                null width 5
-                                textbutton ">" action [SetField(selected_character, "mpt_mouth", poser_menu_arrow_action(selected_character.mpt_mouth, selected_character.definition.head_mouths)), Function(apply_to_input, selected_character)]
-
-                            hbox:
-                                text "Eyes "
-                                textbutton "<" action [SetField(selected_character, "mpt_eye", poser_menu_arrow_action(selected_character.mpt_eye, selected_character.definition.head_eyes, True)), Function(apply_to_input, selected_character)]
-                                null width 5
-                                vbox:
-                                    xsize 20
-                                    text selected_character.mpt_eye or "Default" xalign 0.5
-                                null width 5
-                                textbutton ">" action [SetField(selected_character, "mpt_eye", poser_menu_arrow_action(selected_character.mpt_eye, selected_character.definition.head_eyes)), Function(apply_to_input, selected_character)]
-
-                            hbox:
-                                text "Eyebrows "
-                                textbutton "<" action [SetField(selected_character, "mpt_eyebrow", poser_menu_arrow_action(selected_character.mpt_eyebrow, selected_character.definition.head_eyebrows, True)), Function(apply_to_input, selected_character)]
-                                null width 5
-                                vbox:
-                                    xsize 20
-                                    text selected_character.mpt_eyebrow or "Default" xalign 0.5
-                                null width 5
-                                textbutton ">" action [SetField(selected_character, "mpt_eyebrow", poser_menu_arrow_action(selected_character.mpt_eyebrow, selected_character.definition.head_eyebrows)), Function(apply_to_input, selected_character)]
-                        else:
-                            hbox:
-                                text "Noses "
-                                textbutton "<" action [SetField(selected_character, "mpt_nose", poser_menu_arrow_action(selected_character.mpt_nose, selected_character.definition.second_noses if selected_character.mpt_pose in selected_character.definition.second_poses else selected_character.definition.noses, True)), Function(apply_to_input, selected_character)]
-                                null width 5
-                                vbox:
-                                    xsize 20
-                                    text selected_character.mpt_nose or "Default" xalign 0.5
-                                null width 5
-                                textbutton ">" action [SetField(selected_character, "mpt_nose", poser_menu_arrow_action(selected_character.mpt_nose, selected_character.definition.second_noses if selected_character.mpt_pose in selected_character.definition.second_poses else selected_character.definition.noses)), Function(apply_to_input, selected_character)]
-
-                            hbox:
-                                text "Mouths "
-                                textbutton "<" action [SetField(selected_character, "mpt_mouth", poser_menu_arrow_action(selected_character.mpt_mouth, selected_character.definition.second_mouths if selected_character.mpt_pose in selected_character.definition.second_poses else selected_character.definition.mouths, True)), Function(apply_to_input, selected_character)]
-                                null width 5
-                                vbox:
-                                    xsize 20
-                                    text selected_character.mpt_mouth or "Default" xalign 0.5
-                                null width 5
-                                textbutton ">" action [SetField(selected_character, "mpt_mouth", poser_menu_arrow_action(selected_character.mpt_mouth, selected_character.definition.second_mouths if selected_character.mpt_pose in selected_character.definition.second_poses else selected_character.definition.mouths)), Function(apply_to_input, selected_character)]
-
-                            hbox:
-                                text "Eyes "
-                                textbutton "<" action [SetField(selected_character, "mpt_eye", poser_menu_arrow_action(selected_character.mpt_eye, selected_character.definition.second_eyes if selected_character.mpt_pose in selected_character.definition.second_poses else selected_character.definition.eyes, True)), Function(apply_to_input, selected_character)]
-                                null width 5
-                                vbox:
-                                    xsize 20
-                                    text selected_character.mpt_eye or "Default" xalign 0.5
-                                null width 5
-                                textbutton ">" action [SetField(selected_character, "mpt_eye", poser_menu_arrow_action(selected_character.mpt_eye, selected_character.definition.second_eyes if selected_character.mpt_pose in selected_character.definition.second_poses else selected_character.definition.eyes)), Function(apply_to_input, selected_character)]
-
-                            hbox:
-                                text "Eyebrows "
-                                textbutton "<" action [SetField(selected_character, "mpt_eyebrow", poser_menu_arrow_action(selected_character.mpt_eyebrow, selected_character.definition.second_eyebrows if selected_character.mpt_pose in selected_character.definition.second_poses else selected_character.definition.eyebrows, True)), Function(apply_to_input, selected_character)]
-                                null width 5
-                                vbox:
-                                    xsize 20
-                                    text selected_character.mpt_eyebrow or "Default" xalign 0.5
-                                null width 5
-                                textbutton ">" action [SetField(selected_character, "mpt_eyebrow", poser_menu_arrow_action(selected_character.mpt_eyebrow, selected_character.definition.second_eyebrows if selected_character.mpt_pose in selected_character.definition.second_poses else selected_character.definition.eyebrows)), Function(apply_to_input, selected_character)]
-
-                        if selected_character.mpt_pose not in selected_character.definition.second_poses:
-                            vbox:
+                        if selected_character.ddlc_syntax:
+                            if selected_character.definition.casual != []:
                                 hbox:
-                                    text "Enable Special Scream?"
-                                    vbox:
-                                        xsize 50
-                                        python:
-                                            special_scream_text = "Yes"
-                                            if not selected_character.mpt_allow_special_scream:
-                                                special_scream_text = "No"
-
-                                        text special_scream_text xalign 0.5
+                                    text "Casual Outfit? "
+                                    textbutton "<":
+                                        action [ToggleField(selected_character, "ddlc_casual_outfit_only"), Function(apply_to_input, selected_character)]
                                     null width 5
-                                    textbutton ">" action [ToggleField(selected_character, "mpt_allow_special_scream"), Function(apply_to_input, selected_character)]
+                                    vbox:
+                                        xsize 160
+                                        python:
+                                            casual_text = "No"
+                                            if selected_character.ddlc_casual_outfit_only:
+                                                casual_text = "Yes"
+                                        text casual_text xalign 0.5
+                                    null width 5
+                                    textbutton ">": 
+                                        action [ToggleField(selected_character, "ddlc_casual_outfit_only"), Function(apply_to_input, selected_character)]
+
+                            hbox:
+                                text "Pose "
+                                textbutton "<":
+                                    action [SetField(selected_character.definition.input, "outfit", poser_menu_arrow_action(selected_character.definition.input.outfit, (selected_character.definition.casual if selected_character.ddlc_casual_outfit_only else selected_character.definition.uniform), True)), Function(apply_to_input, selected_character)]
+                                null width 5
+                                vbox:
+                                    xsize 20
+                                    text selected_character.definition.input.outfit or "None" xalign 0.5
+                                null width 5
+                                textbutton ">": 
+                                    action [SetField(selected_character.definition.input, "outfit", poser_menu_arrow_action(selected_character.definition.input.outfit, (selected_character.definition.casual if selected_character.ddlc_casual_outfit_only else selected_character.definition.uniform))), Function(apply_to_input, selected_character)]
+                        else:
+                            python:
+                                def_list = selected_character.definition.__dict__.copy()
+                                del def_list['pose']
+                                del def_list['char']
+                                del def_list['input']
+
+                            for option, items in def_list.items():
+                                null height 5
+
+                                hbox:
+                                    text option.capitalize() + " "
+                                    textbutton "<":
+                                        action [SetField(selected_character.definition.input, option, poser_menu_arrow_action(getattr(selected_character.definition.input, option), items, True)), Function(apply_to_input, selected_character)]
+                                    null width 5
+                                    vbox:
+                                        xsize 20
+                                        text getattr(selected_character.definition.input, option) or "None" xalign 0.5
+                                    null width 5
+                                    textbutton ">": 
+                                        action [SetField(selected_character.definition.input, option, poser_menu_arrow_action(getattr(selected_character.definition.input, option), items)), Function(apply_to_input, selected_character)]
 
 style exposer_previewer_button_text is navigation_button_text
 style exposer_previewer_button:
@@ -541,19 +357,29 @@ screen exposer_previewer:
             vbox:
                 xalign 0.05
                 yalign 0.95
+                textbutton "Switch Syntax" action [ToggleField(selected_character, "ddlc_syntax"), Function(selected_character.reset), Function(apply_to_input, selected_character)]
                 textbutton "Auto Mode" action ShowMenu('new_exposer_previewer')
                 textbutton "Exit" action Return()
             
-            if total_characters != 1:
+            vbox:
+                xalign 0.5
+                yalign 0.98
                 hbox:
-                    xalign 0.5
-                    yalign 0.99
-                    textbutton "1" action [SetVariable("selected_character", char1), SensitiveIf(selected_character != char1)]
-                    textbutton "2" action [SetVariable("selected_character", char2), SensitiveIf(selected_character != char2)]
-                    if total_characters >= 3:
-                        textbutton "3" action [SetVariable("selected_character", char3), SensitiveIf(selected_character != char3)]
-                    if total_characters == 4:
-                        textbutton "4" action [SetVariable("selected_character", char4), SensitiveIf(selected_character != char4)]
+                    python:
+                        syntax_text = "MPT/ExPoser"
+                        if selected_character.ddlc_syntax:
+                            syntax_text = "DDLC"
+                    text "Syntax: " + syntax_text xalign 0.5
+
+                if total_characters != 1:
+                    hbox:
+                        xalign 0.5
+                        textbutton "1" action [SetVariable("selected_character", char1), SensitiveIf(selected_character != char1)]
+                        textbutton "2" action [SetVariable("selected_character", char2), SensitiveIf(selected_character != char2)]
+                        if total_characters >= 3:
+                            textbutton "3" action [SetVariable("selected_character", char3), SensitiveIf(selected_character != char3)]
+                        if total_characters == 4:
+                            textbutton "4" action [SetVariable("selected_character", char4), SensitiveIf(selected_character != char4)]
             
             vbox:
                 xalign 0.95
@@ -569,7 +395,10 @@ screen exposer_previewer:
                     bar value FieldValue(selected_character, "zoom_size", 1.0) xmaximum 90
                     textbutton "R" action SetField(selected_character, "zoom_size", 0.76)
                 hbox:
-                    text "Character: " + str(selected_character.definition.char.capitalize())
+                    if not selected_character.ddlc_syntax:
+                        text "Character: " + selected_character.definition.char
+                    else:
+                        text "Character: " + selected_character.definition.char.capitalize()
                     textbutton "Select" action Show("exposer_previewer_list", char=selected_character)
                 hbox:
                     textbutton "Copy" action Function(copy_line, selected_character)
@@ -587,7 +416,7 @@ screen exposer_previewer:
             vbox:
                 xalign 0.5
                 yalign 0.1
-                input default "" value FieldInputValue(selected_character, "pose_input") exclude "[]\+=)(*&^%$#@!~`|{}:;\"'<,>.?/"
+                input default "" value FieldInputValue(selected_character.definition.input, "pose_input") exclude "[]\+=)(*&^%$#@!~`|{}:;\"'<,>.?/"
 
     on "replace" action If(persistent.exp_advanced_first_run, None, Show("dialog", message="Welcome to the manual version of {u}ExPoser Previewer!{/u}\nThis mode allows you to pose characters in real-time using your keyboard.\n\nIf you came here by mistake, click the {i}Auto Mode{/i} button to return\nto the 'Pose Menu'.", ok_action=[SetField(persistent, "exp_advanced_first_run", True), Hide("dialog")]))
     key "mouseup_3" action ToggleVariable("hide_preview_code")
@@ -620,6 +449,10 @@ screen exposer_previewer_list(char):
                 mousewheel True
                 draggable True
                 has vbox
-
-                for x in available_characters:
-                    textbutton x.capitalize() action [Hide("exposer_previewer_list"), SetField(selected_character, "definition", available_characters[x]), Function(apply_to_input, selected_character)]
+                
+                if not char.ddlc_syntax:
+                    for x in available_characters:
+                        textbutton x action [Hide("exposer_previewer_list"), SetField(selected_character, "definition", available_characters[x]), Function(apply_to_input, selected_character)]
+                else:
+                    for x in available_ddlc_characters:
+                        textbutton x.capitalize() action [Hide("exposer_previewer_list"), SetField(selected_character, "definition", available_ddlc_characters[x]), Function(apply_to_input, selected_character)]
