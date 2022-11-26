@@ -30,6 +30,9 @@ The Posing Tool site from what I know only supports the Doki cast and a few othe
 ## Does this support the old Agent Gold Pose Tool?
 No. ExPoser Previewer was designed to support DDLC and MPT/ExPoser syntax. This pose tool is obsolete and should be replaced with MPT + ExPoser.
 
+## Credits
+- Elckarow - [exp_parser.rpy](./game/exp_parser.rpy) initial code.
+
 Copyright © 2022 GanstaKingofSA. All rights reserved.
 
 Mood Pose Tool (MPT) is the property of u/chronoshag and the MPT team. No MPT assets are provided in ExPoser Previewer.
