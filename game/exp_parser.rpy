@@ -67,6 +67,10 @@ init 999 python hide:
                         if isinstance(attr, layeredimage.Always): continue
 
                         if last_group is None or attr.group != last_group:
+
+                            # Remove the MPT Autofocus/Automouth groups (if MPT only)
+                            if attr.group is None and attr.attribute in ["afm", "afz"]: continue
+                            
                             last_group = attr.group
 
                         # Add "" first to remove certain areas
