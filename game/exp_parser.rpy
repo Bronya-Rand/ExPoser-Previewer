@@ -11,7 +11,7 @@ init python in exp_pasrer:
             self.tag = tag
             self.attributes_map = []
 
-    class AttributeDict():
+    class AttributeDict(object):
         def __init__(self):
             self.attributes = {}
         
@@ -25,7 +25,7 @@ init python in exp_pasrer:
     characters = {}
     ddlc_characters = {}
     
-init 999 python hide:
+init 1 python hide:
     from renpy import store
     from store.exp_pasrer import ExPoserCharacter, ExPoserDDLCCharacter, AttributeDict
     from re import compile
@@ -34,6 +34,9 @@ init 999 python hide:
 
     # Automatically get all Dynamic Characters with a Image Tag
     characters = []
+
+    if renpy.get_autoreload():
+        return
 
     if config.developer:
         for var, c in store.__dict__.items():
