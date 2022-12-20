@@ -4,7 +4,7 @@ default auto_mode = True
 default persistent.exp_first_run = False
 default persistent.exp_advanced_first_run = False
 define hide_preview_code = False
-define exp_ver = 1.1
+define exp_ver = 1.2
 
 init python:
     import pygame_sdl2.scrap
