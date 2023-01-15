@@ -177,6 +177,7 @@ screen new_exposer_previewer:
                     xalign 0.95
                 yalign 0.95
 
+                textbutton "Change Scene" action Show("exposer_scene_list")
                 textbutton "Manual Mode" action [Hide("exposer_pose_menu"), ShowMenu("exposer_previewer")]
                 if selected_character.definition.char != "placeholder":
                     textbutton "Copy Pose Data" action Function(copy_line, selected_character)
@@ -477,3 +478,44 @@ screen exposer_previewer_list(char):
                 else:
                     for x in available_ddlc_characters:
                         textbutton x.capitalize() action [Hide("exposer_previewer_list"), SetField(selected_character, "definition", available_ddlc_characters[x]), Function(apply_to_input, selected_character)]
+
+screen exposer_scene_list:
+    ## Ensure other screens do not get input while this screen is displayed.
+    modal True
+
+    zorder 200
+
+    style_prefix "confirm"
+
+    add "gui/overlay/confirm.png"
+
+    frame:
+
+        vbox:
+            xalign .5
+            yalign .5
+            spacing 30
+
+            hbox:
+                xalign 0.5
+                label _("Select a Scene"):
+                    style "confirm_prompt"
+                    
+                null width 10
+                textbutton "?" action Show("dialog", message="If your background is not here, make sure that it's location is in {i}mod_assets{/i}\nand reload ExPoser Previewer.", ok_action=Hide())
+
+            vpgrid:
+                ysize 400
+                rows math.ceil(len(backgrounds) / 5.0)
+                cols 5
+                allow_underfull True
+                scrollbars "vertical"
+                mousewheel True
+                draggable True
+                spacing 5
+                
+                for name, img in backgrounds.items():
+                    vbox:
+                        add Transform(Composite((1280, 720), (0,0), img), zoom=0.15)
+                        textbutton name action [Hide("exposer_scene_list"), SetVariable("scenery", img)] text_size 14 xalign 0.5
+                        null height 10

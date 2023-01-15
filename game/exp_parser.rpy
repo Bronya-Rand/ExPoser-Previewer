@@ -139,5 +139,16 @@ init -2 python:
                         edf.write("        casual={0},\n".format(sorted(casual)))
                         edf.write("    )\n")
 
+    def get_backgrounds():
+        for name, image in renpy.display.image.images.items():
+            tag, tag_rest = name[0], name[1:]
+
+            if not isinstance(image, renpy.display.im.Image): continue
+            for x in ["images/bg", "images/cg", "mod_assets"]:
+                if x in image.filename:
+                    backgrounds[tag] = image
+
+define backgrounds = {}
+
 init -1 python:
-    config.start_callbacks += [get_ddlc_syntax]
+    config.start_callbacks += [get_ddlc_syntax, get_backgrounds]
