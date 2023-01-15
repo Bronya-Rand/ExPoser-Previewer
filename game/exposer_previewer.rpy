@@ -4,11 +4,10 @@ default auto_mode = True
 default persistent.exp_first_run = False
 default persistent.exp_advanced_first_run = False
 define hide_preview_code = False
-define exp_ver = 1.2
+define exp_ver = 1.3
 
 init python:
     import pygame_sdl2.scrap
-    import re
 
     class ExPoserCharacter():
         def __init__(self):
@@ -54,7 +53,10 @@ init python:
 
     def copy_line(char):
         if char.definition.char != "Placeholder":
-            l = "show " + char.definition.pose.strip() + " " + char.definition.input.pose_input.strip()
+            if not char.ddlc_syntax:
+                l = "show " + char.definition.pose.strip() + " " + char.definition.input.pose_input.strip()
+            else:
+                l = "show " + char.definition.char + " " + char.definition.input.pose_input.strip()
             pygame_sdl2.scrap.put(pygame_sdl2.scrap.SCRAP_TEXT, l.encode("utf-8"))
             renpy.show_screen("dialog", message="Copied syntax of this character to the clipboard.", ok_action=Hide("dialog"))
         else:
@@ -99,7 +101,20 @@ init python:
             
             char.definition.input.pose_input = temp
         else:
-            char.definition.input.pose_input = char.definition.input.outfit
+            if char.ddlc_casual_outfit_only:
+                if not char.definition.input.pose_input[:-1].endswith("b"):
+                    char.definition.input.pose_input = char.definition.input.pose_input[:-1] + "b" + char.definition.input.pose_input[-1]
+                else:
+                    char.definition.input.pose_input = char.definition.input.outfit
+            else:
+                try:
+                    if char.definition.input.pose_input[-2].endswith("b"):
+                        char.definition.input.pose_input = char.definition.input.pose_input[:-2] + char.definition.input.pose_input[-1]
+                    else:
+                        char.definition.input.pose_input = char.definition.input.outfit
+                except IndexError:
+                    char.definition.input.pose_input = char.definition.input.outfit
+            char.definition.input.outfit = char.definition.input.pose_input
     
     # 7.5.X/8.0.X can_show cuz <7.4.11 causes issues
     def new_can_show(name, layer=None, tag=None):
