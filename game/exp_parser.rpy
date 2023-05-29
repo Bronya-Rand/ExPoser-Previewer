@@ -8,7 +8,7 @@ init 1 python in exp_previewer:
     layeredimages = OrderedDict(sorted({name[0]: {} for name, image in renpy.display.image.images.items()
         if isinstance(image, LayeredImage)}.items()))
 
-    def fetch_layeredim6age_obj():
+    def fetch_layeredimage_obj():
         """
         This function obtains the layeredimage classes for each character.
         """
