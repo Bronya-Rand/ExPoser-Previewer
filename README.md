@@ -23,7 +23,7 @@ With support for all Mood Pose Tool (MPT)/ExPoser (ExP) ones, there are endless 
 The Posing Tool site from what I know only supports the Doki cast and a few other characters that only supports DDLC syntax. ExPoser Previewer supports MPT/ExPoser syntax with a finite amount of possibilities of pose/express any character which supports MPT/ExPoser syntax.
 
 ## What difference does this have to Expreviewer?
-They are both identical in some degree. Implementation and engine compatibility is different though. Expreviewer is "7.6/8.1+" only while ExPoser Previewer is anywhere between 7.6/8.1 and below. Additionally, Expreviewer requires you to define characters manually while ExPoser Previewer does it automatically at runtime. My code isn't perfect obvs but its still gets the job done.
+They are both identical in some degree. Implementation is different though. Additionally, Expreviewer requires you to define characters manually while ExPoser Previewer does it automatically at runtime. My code isn't perfect and I am not claming it to be better, but it gets the job done.
 
 ## Does this support the old Agent Gold Pose Tool?
 No. ExPoser Previewer was designed to support DDLC and MPT/ExPoser syntax. This pose tool is obsolete and should be replaced with MPT + ExPoser.
