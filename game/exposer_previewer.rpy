@@ -22,9 +22,6 @@ init python:
     import string
     from store import exp_previewer
 
-    # For now the only efficient way to hide vboxes from viewport
-    attrs_vars = {}
-
     class ExPoserCharacter():
         placeholder = Placeholder("girl", text="Placeholder")
 
@@ -33,71 +30,58 @@ init python:
             self.pose = ""
             self.zoom_size = 0.76
             self.attrs = {}
+            # For now the only efficient way to hide vboxes from viewport
+            self.attrs_vars = {}
+            self.ddlc_attr = ""
+            self.ddlc_mode = False
 
-        def initialize_attributes(self, pose):
+        def initialize_attributes(self, pose=None, reset=False):
             if self.char != "placeholder":
-                self.attrs = dict.fromkeys(exp_previewer.layeredimages[self.char][pose].group_to_attributes.keys(), "")
-                self.initialize_attr_vars(pose)
-
-        def initialize_attr_vars(self, pose=None):
-            global attrs_vars
-            if self.char != "placeholder":
-                if not pose: pose = self.pose
-                attrs_vars = dict.fromkeys(exp_previewer.layeredimages[self.char][pose].group_to_attributes.keys(), False)
-                attrs_vars['poses'] = False
+                if not self.ddlc_mode:
+                    if pose is None:
+                        pose = next(iter(exp_previewer.layeredimages[self.char].keys()))
+                    if reset:
+                        self.attrs = dict.fromkeys(exp_previewer.layeredimages[self.char][pose].group_to_attributes.keys(), "")
+                    self.attrs_vars = dict.fromkeys(exp_previewer.layeredimages[self.char][pose].group_to_attributes.keys(), False)
+                    self.attrs_vars['poses'] = False
+                else: 
+                    if reset:
+                        if pose is None:
+                            pose = next(iter(exp_previewer.ddlcimages[self.char]))
+                        self.ddlc_attr = pose
 
         def set_attr(self, group, new_attr):
             if self.char != "placeholder":
                 self.attrs[group] = new_attr
-
-        def get_attr(self, group):
-            return self.attrs.get(group, "")
+        
+        def set_ddlc_attr(self, new_attr):
+            self.ddlc_attr = new_attr
 
         def get_attr_input(self):
             if self.char != "placeholder":
-                return " ".join(str(attr) for attr in self.attrs.values() if attr != "")
+                if not self.ddlc_mode:
+                    return " ".join(str(attr) for attr in self.attrs.values() if attr != "")
+                return self.ddlc_attr
             return ""
-
-        @property
-        def char(self):
-            return self._char
-
-        @char.setter
-        def char(self, new_character):
-            self._char = new_character
-            if new_character == "placeholder":
-                self.pose = ""
-                self.attrs = {}
-            else:
-                self.pose = list(exp_previewer.layeredimages[self.char].keys())[0]
-                self.initialize_attributes(self.pose)
-
-        @property
-        def pose(self):
-            return self._pose
-
-        @pose.setter
-        def pose(self, new_pose):
-            self._pose = new_pose
-            if self.char != "placeholder":
-                self.initialize_attributes(new_pose)
 
         def set_char_data(self, new_character, p=None):
             self.char = new_character
             if new_character != "placeholder":
-                if not p:
-                    p = next(iter(exp_previewer.layeredimages[self.char].keys()))
-                self.pose = p
-                self.initialize_attributes(p)
+                if not self.ddlc_mode:
+                    if not p:
+                        p = next(iter(exp_previewer.layeredimages[self.char].keys()))
+                    self.pose = p
+                else:
+                    p = next(iter(exp_previewer.ddlcimages[self.char]))
+                self.initialize_attributes(p, reset=True)
                 return
-            self.attrs = {} if new_character == "placeholder" else {group: "" for group in exp_previewer.layeredimages[self.char][p].group_to_attributes.keys()}
 
         def parse_input_data(self):
             if self.char != "placeholder":
-                if PY2:
+                if not self.ddlc_mode:
                     d = self.char + " " + self.pose + " " + self.get_attr_input()
                 else:
-                    d = f"{self.char} {self.pose} {self.get_attr_input()}"
+                    d = self.char + " " + self.get_attr_input()
                 if new_can_show(d):
                     return d, self.zoom_size
             return self.placeholder, 1.0
@@ -112,10 +96,19 @@ init python:
     char4 = ExPoserCharacter()
 
     selected_character = char1
+    left_side_chars = [char1, char2]
+
+    def calculate_dsr():
+        return config.screen_width / 1280.0
+
+    dsr_scale = calculate_dsr()
 
     def copy_line(c):
         if c.char != "placeholder":
-            l = "show " + c.char + " " + c.get_attr_input()
+            if not c.ddlc_mode:
+                l = "show " + c.char + " " + c.pose + " " + c.get_attr_input()
+            else:
+                l = "show " + c.char + " " + c.get_attr_input()
             pygame_sdl2.scrap.put(pygame_sdl2.scrap.SCRAP_TEXT, l.encode("utf-8"))
             renpy.show_screen("dialog", message="Copied syntax of this character to the clipboard.", ok_action=Hide("dialog"))
         else:
@@ -137,6 +130,15 @@ init python:
 
         # Set the new character name and update DictNavigator
         char_obj.set_char_data(next_character)
+
+    def calculate_xpos(i):
+        if total_characters == 2:
+            return int(400 * dsr_scale) + ((i-1) * int(480*dsr_scale))
+        if total_characters == 3:
+            return int(240 * dsr_scale) + ((i-1) * int(400*dsr_scale))
+        if total_characters == 4:
+            return int(200 * dsr_scale) + ((i-1) * int(293*dsr_scale))
+        return int(640 * dsr_scale)
     
     # 7.5.X/8.0.X can_show cuz <7.4.11 causes issues
     def new_can_show(name, layer=None, tag=None):
@@ -151,75 +153,77 @@ init python:
         except:
             return None
 
+    def img_can_show(img):
+        if img == "": return False
+        if new_can_show(exp_background) is None:
+            try:
+                renpy.loader.load(exp_background)
+                return True
+            except IOError:
+                return False
+        return True
+
 screen new_exposer_previewer:
     tag menu
     
     style_prefix "exposer_previewer"
 
-    add exp_background
+    python:
+        can_load = img_can_show(exp_background)
+    
+    if can_load:
+        add exp_background
+    else:
+        add Solid("#000")
+        text "Unable to load image path: " + exp_background color "#ff0000" size int(16 * dsr_scale)
+
+    python:
+        char1_sprite_show, char1_sprite_zoom = char1.parse_input_data()
+        char2_sprite_show, char2_sprite_zoom = char2.parse_input_data()
+        char3_sprite_show, char3_sprite_zoom = char3.parse_input_data()
+        char4_sprite_show, char4_sprite_zoom = char4.parse_input_data()
         
     fixed:
-        hbox:
-            python:
-                default_xc = 640
-                multiplier = 0
-                if total_characters == 2:
-                    default_xc = 400
-                    multiplier = 480
-                elif total_characters == 3:
-                    default_xc = 240
-                    multiplier = 400
-                elif total_characters == 4:
-                    default_xc = 200
-                    multiplier = 293
+        add Transform(char1_sprite_show, zoom=char1_sprite_zoom, xcenter=calculate_xpos(1))
+        if total_characters >= 2:
+            add Transform(char2_sprite_show, zoom=char2_sprite_zoom, xcenter=calculate_xpos(2))
+        if total_characters >= 3:
+            add Transform(char3_sprite_show, zoom=char3_sprite_zoom, xcenter=calculate_xpos(3))
+        if total_characters == 4:
+            add Transform(char4_sprite_show, zoom=char4_sprite_zoom, xcenter=calculate_xpos(4))
 
-            python:
-                char1_sprite_show, char1_sprite_zoom = char1.parse_input_data()
-                char2_sprite_show, char2_sprite_zoom = char2.parse_input_data()
-                char3_sprite_show, char3_sprite_zoom = char3.parse_input_data()
-                char4_sprite_show, char4_sprite_zoom = char4.parse_input_data()
+    if not hide_preview_code:
+        vbox:
+            if total_characters == 1 or (total_characters == 2 and selected_character in left_side_chars[:1]) or (total_characters >= 3 and selected_character in left_side_chars):
+                xalign 0.05
+            else:
+                xalign 0.95
+            yalign 0.95
+            textbutton "Change Scene" action Show("exposer_scene_grid")
+            if selected_character.char != "placeholder":
+                textbutton "Copy Pose Data" action Function(copy_line, selected_character)
+            textbutton "Reset Char" action Function(selected_character.reset)
+            textbutton "Pose Menu" action If(renpy.get_screen("exposer_pose_menu"), Hide("exposer_pose_menu"), Show("exposer_pose_menu"))
+            hbox:
+                textbutton "Exit" action [Hide("exposer_pose_menu"), Return()]
+                textbutton "(i)" action Show("dialog", message="ExPoser Previewer [exp_ver]\nCopyright © 2022 GanstaKingofSA. All rights reserved.", ok_action=Hide("dialog")) text_size int(16 * dsr_scale)
 
-            fixed:
-                add Transform(char1_sprite_show, zoom=char1_sprite_zoom, xcenter=default_xc)
-                if total_characters >= 2:
-                    add Transform(char2_sprite_show, zoom=char2_sprite_zoom, xcenter=default_xc+multiplier)
-                if total_characters >= 3:
-                    add Transform(char3_sprite_show, zoom=char3_sprite_zoom, xcenter=default_xc+(multiplier*2))
-                if total_characters == 4:
-                    add Transform(char4_sprite_show, zoom=char4_sprite_zoom, xcenter=default_xc+(multiplier*3))
-
-        if not hide_preview_code:
-            vbox:
-                if total_characters == 1 or (total_characters == 2 and selected_character == char1) or (total_characters >= 3 and (selected_character == char1 or selected_character == char2)):
-                    xalign 0.05
-                else:
-                    xalign 0.95
-                yalign 0.95
-
-                textbutton "Change Scene" action Show("exposer_scene_prompt")
-                if selected_character.char != "placeholder":
-                    textbutton "Copy Pose Data" action Function(copy_line, selected_character)
-                textbutton "Reset Char" action Function(selected_character.reset)
-                textbutton "Pose Menu" action If(renpy.get_screen("exposer_pose_menu"), Hide("exposer_pose_menu"), Show("exposer_pose_menu"))
-                hbox:
-                    textbutton "Exit" action [Return()]
-                    textbutton "(i)" action Show("dialog", message="ExPoser Previewer [exp_ver]\nCopyright © 2022 GanstaKingofSA. All rights reserved.", ok_action=Hide("dialog")) text_size 16
-
-    on "replace" action If(persistent.exp_first_run, None, Show("dialog", message="Welcome to {u}ExPoser Previewer!{/u}\nThis tool allows you to pose characters in real-time using the 'Pose Menu' from\nDDLC's own poses, to Mood Pose Tool poses and even ExPoser poses.\n\nBe advised that this tool might have bugs. If a bug is found, please\nreport them.", ok_action=[SetField(persistent, "exp_first_run", True), Hide("dialog")]))
+    on "show" action Function(exp_previewer.run_postboot_fetcher) # Fixes Autoreload for DDLC syntax.
+    on "replace" action [Function(exp_previewer.run_postboot_fetcher), If(persistent.exp_first_run, None, Show("dialog", message="Welcome to {u}ExPoser Previewer!{/u}\nThis tool allows you to pose characters in real-time using the 'Pose Menu' from\nDDLC's own poses, to Mood Pose Tool poses and even ExPoser poses.\n\nBe advised that this tool might have bugs. If a bug is found, please\nreport them.", ok_action=[SetField(persistent, "exp_first_run", True), Hide("dialog")]))]
     key "mouseup_3" action ToggleVariable("hide_preview_code")
 
 screen exposer_pose_menu:
     style_prefix "exposer_previewer"
 
     if not hide_preview_code:
-        if total_characters == 1 or (total_characters == 2 and selected_character == char1) or (total_characters >= 3 and (selected_character == char1 or selected_character == char2)):
-            add Transform(Solid("#000"), alpha=0.75) xpos 820 xsize 460
+        if total_characters == 1 or (total_characters == 2 and selected_character in left_side_chars[:1]) or (total_characters >= 3 and selected_character in left_side_chars):
+            add Transform(Solid("#000"), alpha=0.75) xpos int(820 * dsr_scale) xsize int(460 * dsr_scale)
         else: 
-            add Transform(Solid("#000"), alpha=0.75) xsize 460
+            add Transform(Solid("#000"), alpha=0.75) xsize int(460 * dsr_scale)
 
         fixed:
-            if total_characters == 1 or (total_characters == 2 and selected_character == char1) or (total_characters >= 3 and (selected_character == char1 or selected_character == char2)):
-                xpos 820
+            if total_characters == 1 or (total_characters == 2 and selected_character in left_side_chars[:1]) or (total_characters >= 3 and selected_character in left_side_chars):
+                xpos int(820 * dsr_scale)
             vbox:
                 xoffset 25
                 spacing 5
@@ -231,7 +235,7 @@ screen exposer_pose_menu:
                     textbutton "<" action Function(char_switch, selected_character, True)
                     null width 5
                     vbox:
-                        xsize 260
+                        xsize int(260 * dsr_scale)
                         text selected_character.char.capitalize() xalign 0.5
                     null width 5
                     textbutton ">" action Function(char_switch, selected_character)
@@ -250,70 +254,143 @@ screen exposer_pose_menu:
                     hbox:
                         spacing 3
                         text "Char "
-                        textbutton "1" action [Function(char1.initialize_attr_vars), SetVariable("selected_character", char1), SensitiveIf(selected_character != char1)]
+                        textbutton "1" action [Function(char1.initialize_attributes), SetVariable("selected_character", char1), SensitiveIf(selected_character != char1)]
                         if total_characters >= 2:
-                            textbutton "2" action [Function(char2.initialize_attr_vars), SetVariable("selected_character", char2), SensitiveIf(selected_character != char2)]
+                            textbutton "2" action [Function(char2.initialize_attributes), SetVariable("selected_character", char2), SensitiveIf(selected_character != char2)]
                         if total_characters >= 3:
-                            textbutton "3" action [Function(char3.initialize_attr_vars), SetVariable("selected_character", char3), SensitiveIf(selected_character != char3)]
+                            textbutton "3" action [Function(char3.initialize_attributes), SetVariable("selected_character", char3), SensitiveIf(selected_character != char3)]
                         if total_characters == 4:
-                            textbutton "4" action [Function(char4.initialize_attr_vars), SetVariable("selected_character", char4), SensitiveIf(selected_character != char4)]
+                            textbutton "4" action [Function(char4.initialize_attributes), SetVariable("selected_character", char4), SensitiveIf(selected_character != char4)]
 
                 if selected_character.char != "placeholder":
                     viewport:
                         scrollbars "vertical"
                         mousewheel True
-                        xmaximum 420
-                        ymaximum 620
+                        xmaximum int(420 * dsr_scale)
+                        ymaximum int(620 * dsr_scale)
                         has vbox
 
-                        python:
-                            carrot_arrow = ">" if not attrs_vars['poses'] else "v"
-
-                        textbutton carrot_arrow + " Poses":
-                            text_size 16
-                            action ToggleDict(attrs_vars, "poses", False, True)
-
-                        if attrs_vars['poses']:
-                            vbox:   
-                                xoffset 20
-                                for p in exp_previewer.layeredimages[selected_character.char].keys():
-                                    textbutton p:
-                                        text_size 16
-                                        action [Function(selected_character.set_char_data, selected_character.char, p), SensitiveIf(p != selected_character.pose)]
-                            
-                        for g, attr in exp_previewer.layeredimages[selected_character.char][selected_character.pose].group_to_attributes.items():
+                        hbox:
+                            xalign .5
                             python:
-                                carrot_arrow = ">" if not attrs_vars[g] else "v"
+                                img_syntax = "LayeredImage (MPT/ExPoser)"
+                                if selected_character.ddlc_mode:
+                                    img_syntax = "DDLC"
+                            text "Syntax: " + img_syntax size int(16 * dsr_scale)
+                            textbutton "Change Syntax":
+                                text_size int(14 * dsr_scale)
+                                yoffset -4
+                                action [ToggleField(selected_character, "ddlc_mode", False, True), Function(selected_character.set_char_data, selected_character.char)]
 
-                            textbutton carrot_arrow + " " + g:
-                                text_size 16
-                                action ToggleDict(attrs_vars, g, False, True)
+                        if not selected_character.ddlc_mode:
+                            python:
+                                carrot_arrow = ">" if not selected_character.attrs_vars['poses'] else "v"
 
-                            if attrs_vars[g]:
+                            textbutton carrot_arrow + " Poses":
+                                text_size int(16 * dsr_scale)
+                                action ToggleDict(selected_character.attrs_vars, "poses", False, True)
+
+                            if selected_character.attrs_vars['poses']:
                                 vbox:   
                                     xoffset 20
-                                    textbutton "None":
-                                        text_size 16
-                                        action [Function(selected_character.set_attr, g, ""), SensitiveIf("" != selected_character.attrs[g])]
+                                    for p in exp_previewer.layeredimages[selected_character.char].keys():
+                                        textbutton p:
+                                            text_size int(16 * dsr_scale)
+                                            action [Function(selected_character.set_char_data, selected_character.char, p), SensitiveIf(p != selected_character.pose)]
+                                
+                            for g, attr in exp_previewer.layeredimages[selected_character.char][selected_character.pose].group_to_attributes.items():
+                                python:
+                                    carrot_arrow = ">" if not selected_character.attrs_vars[g] else "v"
 
-                                    for a in sorted(attr):
-                                        textbutton a:
-                                            text_size 16
-                                            action [Function(selected_character.set_attr, g, a), SensitiveIf(a != selected_character.attrs[g])]
+                                textbutton carrot_arrow + " " + g:
+                                    text_size int(16 * dsr_scale)
+                                    action ToggleDict(selected_character.attrs_vars, g, False, True)
+
+                                if selected_character.attrs_vars[g]:
+                                    vbox:   
+                                        xoffset 20
+                                        textbutton "None":
+                                            text_size int(16 * dsr_scale)
+                                            action [Function(selected_character.set_attr, g, ""), SensitiveIf("" != selected_character.attrs[g])]
+
+                                        for a in sorted(attr):
+                                            textbutton a:
+                                                text_size int(16 * dsr_scale)
+                                                action [Function(selected_character.set_attr, g, a), SensitiveIf(a != selected_character.attrs[g])]
+
+                        else:
+
+                            for i in exp_previewer.ddlcimages[selected_character.char]:
+
+                                textbutton i:
+                                    text_size int(16 * dsr_scale)
+                                    action [Function(selected_character.set_ddlc_attr, i), SensitiveIf(i != selected_character.ddlc_attr)]
 
 style exposer_previewer_button_text is navigation_button_text
 style exposer_previewer_button:
     hover_sound gui.hover_sound
     activate_sound gui.activate_sound
 style exposer_previewer_text:
-    size 18
+    size int(18*dsr_scale)
     text_align 0.5
 
-screen exposer_scene_prompt:
-    ## Ensure other screens do not get input while this screen is displayed.
+screen exposer_scene_grid():
+
     modal True
 
     zorder 200
+
+    style_prefix "confirm"
+
+    add "gui/overlay/confirm.png"
+
+    frame:
+        xsize int(600 * dsr_scale)
+
+        vbox:
+            xalign .5
+            label _("Select a Background"):
+                style "confirm_prompt"
+                xalign 0.5
+
+            null height 20
+
+            vpgrid:
+                xalign .5
+                cols 3
+                ysize 500
+                mousewheel True
+                draggable True
+                spacing 10
+
+                python:
+                    null_count = int(len(exp_previewer.backgrounds)/3) % 3
+                
+                for name, img in exp_previewer.backgrounds.items():  
+                    vbox:
+                        imagebutton:
+                            idle Transform(img.__dict__['filename'], size=(240, 120), alpha=1.0)
+                            hover Transform(img.__dict__['filename'], size=(240, 120), alpha=0.75)
+                            action [Hide(), SetVariable("exp_background", name)]
+                        null height 3
+                        text name xalign .5 color "#000" outlines []
+                
+                for i in range(null_count):
+                    null
+            
+            null height 20
+                
+            hbox:
+                xalign .5
+                spacing 10
+                textbutton _("Exit") action Hide()
+                textbutton _("Enter File Path") action [Hide(), Show("exposer_scene_prompt")]
+
+screen exposer_scene_prompt():
+    ## Ensure other screens do not get input while this screen is displayed.
+    modal True
+
+    zorder 201
 
     style_prefix "confirm"
 
@@ -327,7 +404,7 @@ screen exposer_scene_prompt:
             spacing 30
 
             
-            label _("Input Scene Name/File Path"):
+            label _("Input File Path"):
                 style "confirm_prompt"
                 xalign 0.5
                     
