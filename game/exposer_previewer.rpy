@@ -2,7 +2,7 @@
 define total_characters = 1 
 default persistent.exp_first_run = False
 define hide_preview_code = False
-define exp_ver = "2.0B"
+define exp_ver = "2.1"
 define exp_background = "bg club_day"
 
 init -1000 python:
