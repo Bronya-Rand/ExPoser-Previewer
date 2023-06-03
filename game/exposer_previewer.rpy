@@ -206,7 +206,7 @@ screen new_exposer_previewer:
             textbutton "Pose Menu" action If(renpy.get_screen("exposer_pose_menu"), Hide("exposer_pose_menu"), Show("exposer_pose_menu"))
             hbox:
                 textbutton "Exit" action [Hide("exposer_pose_menu"), Return()]
-                textbutton "(i)" action Show("dialog", message="ExPoser Previewer [exp_ver]\nCopyright © 2022 GanstaKingofSA. All rights reserved.", ok_action=Hide("dialog")) text_size int(16 * dsr_scale)
+                textbutton "(i)" action Show("dialog", message="ExPoser Previewer [exp_ver]\nCopyright © 2022-2023 GanstaKingofSA. All rights reserved.", ok_action=Hide("dialog")) text_size int(16 * dsr_scale)
 
     on "show" action Function(exp_previewer.run_postboot_fetcher) # Fixes Autoreload for DDLC syntax.
     on "replace" action [Function(exp_previewer.run_postboot_fetcher), If(persistent.exp_first_run, None, Show("dialog", message="Welcome to {u}ExPoser Previewer!{/u}\nThis tool allows you to pose characters in real-time using the 'Pose Menu' from\nDDLC's own poses, to Mood Pose Tool poses and even ExPoser poses.\n\nBe advised that this tool might have bugs. If a bug is found, please\nreport them.", ok_action=[SetField(persistent, "exp_first_run", True), Hide("dialog")]))]
@@ -404,7 +404,7 @@ screen exposer_scene_prompt():
             spacing 30
 
             
-            label _("Input File Path"):
+            label _("Input Scene Name/File Path"):
                 style "confirm_prompt"
                 xalign 0.5
                     
