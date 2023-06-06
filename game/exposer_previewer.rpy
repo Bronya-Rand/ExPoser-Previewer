@@ -199,9 +199,16 @@ screen new_exposer_previewer:
             else:
                 xalign 0.95
             yalign 0.95
-            textbutton "Change Scene" action Show("exposer_scene_grid")
+
             if selected_character.char != "placeholder":
+                vbox:
+                    text "Zoom Size (" + str(round(selected_character.zoom_size, 2)) + "): "
+                    hbox:
+                        xoffset 10
+                        bar value FieldValue(selected_character, "zoom_size", 1.0) xmaximum 110
+                        textbutton "R" action SetField(selected_character, "zoom_size", 0.76)
                 textbutton "Copy Pose Data" action Function(copy_line, selected_character)
+            textbutton "Change Scene" action Show("exposer_scene_grid")
             textbutton "Reset Char" action Function(selected_character.reset)
             textbutton "Pose Menu" action If(renpy.get_screen("exposer_pose_menu"), Hide("exposer_pose_menu"), Show("exposer_pose_menu"))
             hbox:
@@ -345,7 +352,7 @@ screen exposer_scene_grid():
     add "gui/overlay/confirm.png"
 
     frame:
-        xsize int(600 * dsr_scale)
+        #xsize int(600 * dsr_scale)
 
         vbox:
             xalign .5
@@ -358,13 +365,18 @@ screen exposer_scene_grid():
             vpgrid:
                 xalign .5
                 cols 3
-                ysize 500
+                ysize 450
                 mousewheel True
                 draggable True
+                scrollbars "vertical"
                 spacing 10
 
                 python:
-                    null_count = int(len(exp_previewer.backgrounds)/3) % 3
+                    bg_count = len(exp_previewer.backgrounds)
+                    if bg_count < 3:
+                        null_count = 3-bg_count
+                    else:
+                        null_count = bg_count % 3
                 
                 for name, img in exp_previewer.backgrounds.items():  
                     vbox:
@@ -375,7 +387,7 @@ screen exposer_scene_grid():
                         null height 3
                         text name xalign .5 color "#000" outlines []
                 
-                for i in range(null_count):
+                for i in range((3-null_count)):
                     null
             
             null height 20
@@ -384,7 +396,7 @@ screen exposer_scene_grid():
                 xalign .5
                 spacing 10
                 textbutton _("Exit") action Hide()
-                textbutton _("Enter File Path") action [Hide(), Show("exposer_scene_prompt")]
+                textbutton _("Enter Scene Name/File Path") action [Hide(), Show("exposer_scene_prompt")]
 
 screen exposer_scene_prompt():
     ## Ensure other screens do not get input while this screen is displayed.
