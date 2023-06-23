@@ -40,8 +40,9 @@ init 1 python in exp_previewer:
         for c in characters:
             for name, image in renpy.display.image.images.items():
                 if name[0] != c: continue
-                if name[1] not in layeredimages[c].keys():
-                    temp[name[0]].append(name[1])
+                if name[0] in layeredimages.keys():
+                    if name[1] in layeredimages[c].keys(): continue 
+                temp[name[0]].append(name[1])
 
         return temp
     
