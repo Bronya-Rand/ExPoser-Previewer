@@ -287,7 +287,7 @@ screen exposer_pose_menu:
                             textbutton "Change Syntax":
                                 text_size int(14 * dsr_scale)
                                 yoffset -4
-                                action [ToggleField(selected_character, "ddlc_mode", False, True), Function(selected_character.set_char_data, selected_character.char)]
+                                action [ToggleField(selected_character, "ddlc_mode", False, True), Function(selected_character.reset)]
 
                         if not selected_character.ddlc_mode:
                             python:
