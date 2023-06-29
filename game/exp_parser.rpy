@@ -24,6 +24,8 @@ init 1 python in exp_previewer:
         """
         This function obtains the image pattern for each character that is a ADVCharacter.
         """
+        global ddlcimages
+        
         # Due to the nature that some chars image might not be Composite's
         # grab names of actual characters
         characters = []
@@ -44,7 +46,7 @@ init 1 python in exp_previewer:
                     if name[1] in layeredimages[c].keys(): continue 
                 temp[name[0]].append(name[1])
 
-        return temp
+        ddlcimages = temp
     
     def fetch_backgrounds():
         """
@@ -55,8 +57,5 @@ init 1 python in exp_previewer:
                 if isinstance(image, renpy.display.im.Image):
                     backgrounds[name[0] + " " + name[1]] = image
 
-    def run_postboot_fetcher():
-        ddlcimages = fetch_ddlcimage_pattern()
-        fetch_backgrounds()
-
     fetch_layeredimage_obj()
+    fetch_ddlcimage_pattern()
