@@ -116,7 +116,10 @@ init python:
     
     def char_switch(char_obj, back=False):
         current_character = char_obj.char
-        character_names = list(exp_previewer.layeredimages.keys())
+        if char_obj.ddlc_mode:
+            character_names = list(exp_previewer.ddlcimages.keys())
+        else:
+            character_names = list(exp_previewer.layeredimages.keys())
         current_index = character_names.index(current_character)
 
         # Get the next character name index based on the back flag
