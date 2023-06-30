@@ -46,6 +46,10 @@ init 1 python in exp_previewer:
                     if name[1] in layeredimages[c].keys(): continue 
                 temp[name[0]].append(name[1])
 
+        for k, v in temp.items():
+            if v = []:
+                del temp[k]
+
         ddlcimages = temp
     
     def fetch_backgrounds():
