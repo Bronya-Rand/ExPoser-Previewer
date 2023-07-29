@@ -43,7 +43,6 @@ init 1 python in exp_previewer:
                     characters.append(char.__dict__['image_tag'])
 
         temp = OrderedDict(sorted({c: [] for c in characters}.items()))
-        temp["placeholder"] = []
 
         for c in characters:
             for name, image in renpy.display.image.images.items():
@@ -59,6 +58,8 @@ init 1 python in exp_previewer:
         
         for k in keys_to_delete:
             del temp[k]
+        
+        temp["placeholder"] = []
 
         ddlcimages = temp
     
