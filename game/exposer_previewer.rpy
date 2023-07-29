@@ -304,7 +304,12 @@ screen exposer_pose_menu:
                                 vbox:   
                                     xoffset 20
                                     for p in exp_previewer.layeredimages[selected_character.char].keys():
-                                        textbutton p:
+                                        python:
+                                            if p == "":
+                                                pose_text = "Unknown Pose Name"
+                                            else:
+                                                pose_text = p
+                                        textbutton pose_text:
                                             text_size int(16 * dsr_scale)
                                             action [Function(selected_character.set_char_data, selected_character.char, p), SensitiveIf(p != selected_character.pose)]
                                 

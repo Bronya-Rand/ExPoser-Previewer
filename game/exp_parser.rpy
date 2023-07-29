@@ -18,7 +18,13 @@ init 1 python in exp_previewer:
         layeredimages["placeholder"] = (None, None)
         for name, image in renpy.display.image.images.items():
             if isinstance(image, LayeredImage):
-                layeredimages[name[0]][name[1]] = image
+                # Verify we have a pose name, else blank it from the dictionary
+                # (Though MPT makers should add at least 'base', 'forward' or something in here...)
+                try:
+                    name[1]
+                    layeredimages[name[0]][name[1]] = image
+                except IndexError:
+                    layeredimages[name[0]][''] = image
 
     def fetch_ddlcimage_pattern():
         """
@@ -46,9 +52,13 @@ init 1 python in exp_previewer:
                     if name[1] in layeredimages[c].keys(): continue 
                 temp[name[0]].append(name[1])
 
+        keys_to_delete = []
         for k, v in temp.items():
-            if v = []:
-                del temp[k]
+            if v == []:
+                keys_to_delete.append(k)
+        
+        for k in keys_to_delete:
+            del temp[k]
 
         ddlcimages = temp
     
