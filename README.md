@@ -51,10 +51,10 @@ No. ExPoser Previewer was designed to support DDLC and MPT/ExPoser syntax. This 
 ## Credits
 - Elckarow - [exp_parser.rpy](./game/exp_parser.rpy) initial code [1.0-1.2].
 
-Copyright © 2022-2023 GanstaKingofSA. All rights reserved.
+Copyright © 2022-2023 bronya_rand. All rights reserved.
 
 Mood Pose Tool (MPT) is the property of u/chronoshag and the MPT team. No MPT assets are provided in ExPoser Previewer.
 
-ExPoser (ExP) is the property of GanstaKingofSA.
+ExPoser (ExP) is the property of bronya_rand.
 
 DDLC, the DDLC posing code (DDLC syntax) are the property of Team Salvato.
